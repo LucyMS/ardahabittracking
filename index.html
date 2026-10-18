@@ -63,7 +63,7 @@
             <i class="fa-solid fa-chevron-left text-xs"></i>
           </button>
           <div class="text-left">
-            <div id="currentDateTitle" class="text-sm font-semibold text-zinc-100 flex items-center gap-1.5">
+            <div id="currentDateTitle" class="text-sm font-semibold text-zinc-100 flex items-center gap-1.5 cursor-pointer">
               <span>Seçili Tarih</span>
               <i class="fa-solid fa-calendar-day text-[11px] text-zinc-400"></i>
             </div>
@@ -229,7 +229,7 @@
         <!-- API Anahtarı Girişi (Gizli/Kompakt) -->
         <div class="space-y-1">
           <label class="block text-[11px] text-zinc-400">Gemini API Anahtarı (AQ...):</label>
-          <input type="password" id="geminiApiKeyInput" placeholder="AQ.Ab8... anahtarını yapıştır" class="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-xs text-zinc-200 outline-none focus:border-sky-500">
+          <input type="password" id="geminiApiKeyInput" placeholder="AQ.Ab8... anahtarını yapıştır" class="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-xs text-zinc-200 outline-none focus:border-sky-500 font-mono">
         </div>
 
         <button id="scanImageBtn" type="button" class="w-full py-2.5 rounded-xl bg-sky-500 hover:bg-sky-400 text-zinc-950 font-semibold text-xs flex items-center justify-center gap-2 active:scale-95 transition">
@@ -256,23 +256,23 @@
         <div class="grid grid-cols-5 gap-1.5">
           <div>
             <label class="text-[10px] text-zinc-500">Kalori</label>
-            <input type="number" id="inputCal" class="w-full bg-zinc-900 border border-zinc-800 rounded px-2 py-1.5 text-xs text-zinc-200">
+            <input type="number" id="inputCal" class="w-full bg-zinc-900 border border-zinc-800 rounded px-2 py-1.5 text-xs text-zinc-200 font-mono">
           </div>
           <div>
             <label class="text-[10px] text-zinc-500">Protein</label>
-            <input type="number" id="inputProtein" class="w-full bg-zinc-900 border border-zinc-800 rounded px-2 py-1.5 text-xs text-zinc-200">
+            <input type="number" id="inputProtein" class="w-full bg-zinc-900 border border-zinc-800 rounded px-2 py-1.5 text-xs text-zinc-200 font-mono">
           </div>
           <div>
             <label class="text-[10px] text-zinc-500">Karb</label>
-            <input type="number" id="inputCarb" class="w-full bg-zinc-900 border border-zinc-800 rounded px-2 py-1.5 text-xs text-zinc-200">
+            <input type="number" id="inputCarb" class="w-full bg-zinc-900 border border-zinc-800 rounded px-2 py-1.5 text-xs text-zinc-200 font-mono">
           </div>
           <div>
             <label class="text-[10px] text-zinc-500">Yağ</label>
-            <input type="number" id="inputFat" class="w-full bg-zinc-900 border border-zinc-800 rounded px-2 py-1.5 text-xs text-zinc-200">
+            <input type="number" id="inputFat" class="w-full bg-zinc-900 border border-zinc-800 rounded px-2 py-1.5 text-xs text-zinc-200 font-mono">
           </div>
           <div>
             <label class="text-[10px] text-zinc-500">Adım</label>
-            <input type="number" id="inputSteps" class="w-full bg-zinc-900 border border-zinc-800 rounded px-2 py-1.5 text-xs text-zinc-200">
+            <input type="number" id="inputSteps" class="w-full bg-zinc-900 border border-zinc-800 rounded px-2 py-1.5 text-xs text-zinc-200 font-mono">
           </div>
         </div>
       </div>
@@ -745,24 +745,23 @@
       imageInput.value = '';
     });
 
-    // --- DİNAMİK MODEL KEŞFİ & 404 KÖKTEN ÇÖZÜMÜ ---
+    // --- DİNAMİK MODEL KEŞFİ & 3.8 FLASH DESTEĞİ ---
     async function callGeminiVision(key, base64Data) {
-      // 1. Önce kullanıcının anahtarının desteklediği modelleri doğrudan Google'a soruyoruz
-      let activeModel = "gemini-2.5-flash"; // Varsayılan en güncel
+      // API'nin açıkça belirttiği en güncel model: gemini-3.8-flash
+      let activeModel = "gemini-3.8-flash";
       try {
         const modelListRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${key}`);
         if (modelListRes.ok) {
           const modelListData = await modelListRes.json();
           const available = (modelListData.models || []).map(m => m.name.replace('models/', ''));
-          // En uygun flash modelini seç
-          const best = available.find(m => m.includes('2.5-flash')) ||
-                       available.find(m => m.includes('2.0-flash')) ||
-                       available.find(m => m.includes('1.5-flash')) ||
+          // En uygun flash modelini öncelik sırasına göre seç
+          const best = available.find(m => m.includes('3.8-flash')) ||
+                       available.find(m => m.includes('3-flash')) ||
                        available.find(m => m.includes('flash'));
           if (best) activeModel = best;
         }
       } catch (err) {
-        console.warn("Model listesi alınamadı, varsayılan deneniyor:", err);
+        console.warn("Model listesi alınamadı, varsayılan 3.8 deneniyor:", err);
       }
 
       const prompt = `Görsel bir FatSecret veya beslenme/adım takip ekran görüntüsüdür.
@@ -786,7 +785,7 @@ YALNIZCA şu JSON formatında cevap ver:
         ]
       };
 
-      // Modeli çağır
+      // Modeli çağır (gemini-3.8-flash)
       const url = `https://generativelanguage.googleapis.com/v1beta/models/${activeModel}:generateContent?key=${key}`;
       const res = await fetch(url, {
         method: "POST",
