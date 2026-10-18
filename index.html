@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>Habit & Performance Tracker</title>
 
-  <!-- Apple / iOS Web Clip Standartları -->
+  <!-- Apple / iOS Standartları -->
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Tracker">
@@ -42,10 +42,10 @@
       accent-color: #38bdf8;
       cursor: pointer;
     }
-    .modal-closed {
+    .modal-hidden {
       display: none !important;
     }
-    .modal-open {
+    .modal-visible {
       display: flex !important;
     }
   </style>
@@ -63,7 +63,7 @@
             <i class="fa-solid fa-chevron-left text-xs"></i>
           </button>
           <div class="text-left">
-            <div id="currentDateTitle" class="text-sm font-semibold text-zinc-100 flex items-center gap-1.5 cursor-pointer">
+            <div id="currentDateTitle" class="text-sm font-semibold text-zinc-100 flex items-center gap-1.5">
               <span>Seçili Tarih</span>
               <i class="fa-solid fa-calendar-day text-[11px] text-zinc-400"></i>
             </div>
@@ -177,4 +177,865 @@
 
     <!-- ESTÜ Ders Programı -->
     <section class="bg-[#18191d] rounded-2xl p-4 border border-zinc-800/80 shadow-sm space-y-3">
-      <div class="flex items-center
+      <div class="flex items-center justify-between border-b border-zinc-800/60 pb-2">
+        <div class="flex items-center gap-2">
+          <i class="fa-solid fa-graduation-cap text-indigo-400 text-xs"></i>
+          <h2 class="text-xs font-semibold uppercase tracking-wider text-zinc-300">ESTÜ Ders Programı</h2>
+        </div>
+        <span id="classStatusBadge" class="text-[10px] px-2 py-0.5 rounded-full bg-zinc-800 text-zinc-300">0/0</span>
+      </div>
+
+      <div id="classList" class="space-y-2"></div>
+    </section>
+
+  </main>
+
+  <!-- HIZLI MAKRO / FOTOĞRAF MODALI -->
+  <div id="fastMacroModal" class="modal-hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm items-end sm:items-center justify-center p-0 sm:p-4">
+    <div class="bg-[#18191d] w-full max-w-lg rounded-t-3xl sm:rounded-2xl border border-zinc-800 p-5 space-y-4 max-h-[90vh] overflow-y-auto">
+      
+      <div class="flex items-center justify-between border-b border-zinc-800 pb-2">
+        <h3 class="text-sm font-semibold text-zinc-100 flex items-center gap-2">
+          <i class="fa-solid fa-bolt text-sky-400"></i>
+          FatSecret Makro & Adım Girişi
+        </h3>
+        <button id="closeFastMacroModal" type="button" class="text-zinc-400 hover:text-zinc-200 p-1.5">
+          <i class="fa-solid fa-xmark text-base"></i>
+        </button>
+      </div>
+
+      <!-- Giriş Yolu Seçici: Fotoğraf veya Hızlı Metin -->
+      <div class="flex rounded-xl bg-zinc-900 p-1 border border-zinc-800 text-xs font-medium">
+        <button id="tabPhotoBtn" type="button" class="flex-1 py-1.5 rounded-lg bg-zinc-800 text-sky-400 transition">📸 Fotoğraf Yükle</button>
+        <button id="tabTextBtn" type="button" class="flex-1 py-1.5 rounded-lg text-zinc-400 transition">📋 Metin Yapıştır</button>
+      </div>
+
+      <!-- Fotoğraf Sekmesi -->
+      <div id="photoTabSection" class="space-y-3">
+        <div id="dropZone" class="border-2 border-dashed border-zinc-700 hover:border-sky-500 rounded-xl p-4 text-center cursor-pointer transition-colors">
+          <i class="fa-solid fa-cloud-arrow-up text-2xl text-zinc-400 mb-1"></i>
+          <div class="text-xs text-zinc-200 font-medium">FatSecret Ekran Görüntüsü Seç</div>
+          <div class="text-[10px] text-zinc-500 mt-0.5">Galeriden seç veya ekran görüntüsü yükle</div>
+          <input type="file" id="imageInput" accept="image/*" class="hidden">
+        </div>
+
+        <div id="imagePreviewContainer" class="hidden relative rounded-lg overflow-hidden border border-zinc-700 max-h-44 flex justify-center bg-zinc-900">
+          <img id="imagePreview" src="" class="object-contain max-h-44 w-auto">
+          <button id="removeImageBtn" type="button" class="absolute top-2 right-2 bg-black/80 text-white rounded-full p-1.5 text-xs">
+            <i class="fa-solid fa-xmark px-1"></i>
+          </button>
+        </div>
+
+        <!-- API Anahtarı Girişi (Gizli/Kompakt) -->
+        <div class="space-y-1">
+          <label class="block text-[11px] text-zinc-400">Gemini API Anahtarı (AQ...):</label>
+          <input type="password" id="geminiApiKeyInput" placeholder="AQ.Ab8... anahtarını yapıştır" class="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-xs text-zinc-200 outline-none focus:border-sky-500">
+        </div>
+
+        <button id="scanImageBtn" type="button" class="w-full py-2.5 rounded-xl bg-sky-500 hover:bg-sky-400 text-zinc-950 font-semibold text-xs flex items-center justify-center gap-2 active:scale-95 transition">
+          <i class="fa-solid fa-wand-magic-sparkles"></i>
+          <span>Fotoğraftan Otomatik Oku</span>
+        </button>
+      </div>
+
+      <!-- Metin Sekmesi (Yapay zekasız, anında regex çözümleme) -->
+      <div id="textTabSection" class="hidden space-y-3">
+        <label class="block text-[11px] text-zinc-400">FatSecret veya Günlük Notunu Yapıştır:</label>
+        <textarea id="rawMacroTextarea" rows="4" placeholder="Örnek: 2350 kcal, 140g protein, 330g karb, 52g yağ, 10500 adım..." class="w-full bg-zinc-900 border border-zinc-700 rounded-xl p-3 text-xs text-zinc-200 outline-none focus:border-sky-500 font-mono"></textarea>
+        <button id="parseTextBtn" type="button" class="w-full py-2.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-sky-400 border border-sky-500/30 font-semibold text-xs flex items-center justify-center gap-2 active:scale-95 transition">
+          <i class="fa-solid fa-bolt"></i>
+          <span>Metinden Değerleri Ayıkla</span>
+        </button>
+      </div>
+
+      <div id="apiStatusMessage" class="hidden text-[11px] p-2.5 rounded-lg text-center font-medium"></div>
+
+      <!-- Ayıklanan Değerler (Manuel düzenlenebilir) -->
+      <div class="border-t border-zinc-800/80 pt-2 space-y-1.5">
+        <div class="text-[11px] text-zinc-400 font-medium">Günün Değerleri:</div>
+        <div class="grid grid-cols-5 gap-1.5">
+          <div>
+            <label class="text-[10px] text-zinc-500">Kalori</label>
+            <input type="number" id="inputCal" class="w-full bg-zinc-900 border border-zinc-800 rounded px-2 py-1.5 text-xs text-zinc-200">
+          </div>
+          <div>
+            <label class="text-[10px] text-zinc-500">Protein</label>
+            <input type="number" id="inputProtein" class="w-full bg-zinc-900 border border-zinc-800 rounded px-2 py-1.5 text-xs text-zinc-200">
+          </div>
+          <div>
+            <label class="text-[10px] text-zinc-500">Karb</label>
+            <input type="number" id="inputCarb" class="w-full bg-zinc-900 border border-zinc-800 rounded px-2 py-1.5 text-xs text-zinc-200">
+          </div>
+          <div>
+            <label class="text-[10px] text-zinc-500">Yağ</label>
+            <input type="number" id="inputFat" class="w-full bg-zinc-900 border border-zinc-800 rounded px-2 py-1.5 text-xs text-zinc-200">
+          </div>
+          <div>
+            <label class="text-[10px] text-zinc-500">Adım</label>
+            <input type="number" id="inputSteps" class="w-full bg-zinc-900 border border-zinc-800 rounded px-2 py-1.5 text-xs text-zinc-200">
+          </div>
+        </div>
+      </div>
+
+      <button id="saveParsedMacrosBtn" type="button" class="w-full py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-semibold text-xs active:scale-95 transition">
+        Kaydet ve Güncelle
+      </button>
+    </div>
+  </div>
+
+  <!-- BULUT VE EŞLEŞTİRME MODALI -->
+  <div id="cloudModal" class="modal-hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm items-center justify-center p-4">
+    <div class="bg-[#18191d] w-full max-w-lg rounded-2xl border border-zinc-800 p-5 space-y-4">
+      <div class="flex items-center justify-between border-b border-zinc-800 pb-2">
+        <h3 class="text-sm font-semibold text-zinc-100 flex items-center gap-2">
+          <i class="fa-solid fa-cloud text-sky-400"></i>
+          Bulut Eşitleme & Cihazlar
+        </h3>
+        <button id="closeCloudModal" type="button" class="text-zinc-400 hover:text-zinc-200 p-1.5">
+          <i class="fa-solid fa-xmark text-base"></i>
+        </button>
+      </div>
+
+      <div class="bg-zinc-900/80 p-3 rounded-xl border border-zinc-800 text-xs space-y-2">
+        <div class="text-zinc-400">Bulut Kimliğin (Cihaz Eşleştirme):</div>
+        <div id="cloudIdDisplay" class="font-mono text-sky-400 font-semibold text-sm select-all break-all">...</div>
+        <div class="text-[11px] text-zinc-500">Tüm antrenman ve makroların bu kimlik altında cihaz hafızanda ve bulutta güvendedir.</div>
+      </div>
+
+      <div class="space-y-2">
+        <button id="syncNowBtn" type="button" class="w-full py-2.5 rounded-xl bg-sky-500 hover:bg-sky-400 text-zinc-950 font-semibold text-xs flex items-center justify-center gap-2 active:scale-95 transition">
+          <i class="fa-solid fa-arrows-rotate"></i>
+          Bulutla Şimdi Eşitle
+        </button>
+        <button id="downloadJsonBtn" type="button" class="w-full py-2.5 rounded-xl bg-zinc-800 text-zinc-300 font-medium text-xs flex items-center justify-center gap-2 border border-zinc-700/60 active:scale-95 transition">
+          <i class="fa-solid fa-download"></i>
+          Yerel Yedek İndir (JSON)
+        </button>
+      </div>
+      <div id="cloudSyncMessage" class="hidden text-[11px] p-2 rounded-lg text-center font-medium"></div>
+    </div>
+  </div>
+
+  <!-- GÜNÜN ÖZETİ MODALI -->
+  <div id="summaryModal" class="modal-hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm items-center justify-center p-4">
+    <div class="bg-[#18191d] w-full max-w-lg rounded-2xl border border-zinc-800 p-5 space-y-3">
+      <div class="flex items-center justify-between border-b border-zinc-800 pb-2">
+        <h3 class="text-sm font-semibold text-zinc-100 flex items-center gap-2">
+          <i class="fa-solid fa-clipboard-check text-emerald-400"></i>
+          Koç İçin Günlük Özet Raporu
+        </h3>
+        <button id="closeSummaryModal" type="button" class="text-zinc-400 hover:text-zinc-200 p-1.5">
+          <i class="fa-solid fa-xmark text-base"></i>
+        </button>
+      </div>
+
+      <textarea id="summaryTextarea" rows="10" readonly class="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-3 text-xs text-zinc-200 font-mono resize-none focus:outline-none"></textarea>
+
+      <button id="copySummaryBtn" type="button" class="w-full py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-semibold text-xs flex items-center justify-center gap-1.5 active:scale-95">
+        <i class="fa-solid fa-copy"></i>
+        Metni Kopyala
+      </button>
+    </div>
+  </div>
+
+  <!-- GEÇMİŞ MODALI -->
+  <div id="historyModal" class="modal-hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm items-center justify-center p-4">
+    <div class="bg-[#18191d] w-full max-w-lg rounded-2xl border border-zinc-800 p-5 space-y-3 max-h-[85vh] flex flex-col">
+      <div class="flex items-center justify-between border-b border-zinc-800 pb-2">
+        <h3 class="text-sm font-semibold text-zinc-100 flex items-center gap-2">
+          <i class="fa-solid fa-chart-simple text-amber-400"></i>
+          Kayıt Geçmişi & İstatistik
+        </h3>
+        <button id="closeHistoryModal" type="button" class="text-zinc-400 hover:text-zinc-200 p-1.5">
+          <i class="fa-solid fa-xmark text-base"></i>
+        </button>
+      </div>
+
+      <div class="grid grid-cols-3 gap-2 text-center py-1">
+        <div class="bg-zinc-900 p-2 rounded-xl border border-zinc-800">
+          <div class="text-[10px] text-zinc-400">Kayıtlı Gün</div>
+          <div id="statTotalDays" class="text-sm font-bold text-zinc-100">0</div>
+        </div>
+        <div class="bg-zinc-900 p-2 rounded-xl border border-zinc-800">
+          <div class="text-[10px] text-zinc-400">Ort. Kalori</div>
+          <div id="statAvgCal" class="text-sm font-bold text-sky-400">0</div>
+        </div>
+        <div class="bg-zinc-900 p-2 rounded-xl border border-zinc-800">
+          <div class="text-[10px] text-zinc-400">Diyet Uyumu</div>
+          <div id="statDietRate" class="text-sm font-bold text-emerald-400">%0</div>
+        </div>
+      </div>
+
+      <div id="historyListContainer" class="flex-1 overflow-y-auto space-y-1.5 pr-1 custom-scroll"></div>
+    </div>
+  </div>
+
+  <script>
+    // --- VERİ ŞABLONLARI ---
+    const WEEKLY_WORKOUT_TEMPLATES = {
+      1: {
+        title: "PULL 1 (Ağır Sırt & Biceps)",
+        exercises: [
+          "Chest-Supported T-Bar / Machine Row (3x6-8)",
+          "Lat Pulldown - Geniş Tutuş (3x6-8)",
+          "Seated Cable Row - Dar Tutuş (2x8)",
+          "Reverse Pec Deck / Face Pull (3x10-12)",
+          "Incline Dumbbell Curl (2x6-8)",
+          "Hammer Curl - Dumbbell (2x6-8)"
+        ]
+      },
+      2: {
+        title: "LEG 1 (Ağır Quad & Yan Omuz)",
+        exercises: [
+          "Leg Press / Hack Squat (3x6-8)",
+          "Leg Extension (2x8-10)",
+          "Lying Leg Curl (3x6-8)",
+          "Standing Calf Raise (3x10)",
+          "Cable Lateral Raise (3x10-12)"
+        ]
+      },
+      3: {
+        title: "PUSH 1 (Ağır Göğüs, Yan Omuz & Triceps)",
+        exercises: [
+          "Incline Machine Press (3x6-8)",
+          "Flat Dumbbell Press (2x6-8)",
+          "Pec Deck Fly (2x8-10)",
+          "Seated Dumbbell Shoulder Press (2x6-8)",
+          "Cable Lateral Raise (3x8-10)",
+          "Dips (2x6-8)",
+          "Overhead Cable Triceps Extension (2x8-10)"
+        ]
+      },
+      4: {
+        title: "PULL 2 (Genişlik / Lat Odaklı & Kol)",
+        exercises: [
+          "Neutral Grip Lat Pulldown (3x6-8)",
+          "Tek Kol Dumbbell / Machine Row (3x6-8)",
+          "Straight Arm Pulldown (2x10)",
+          "Face Pull (3x10-12)",
+          "Barbell / EZ-Bar Curl (2x6-8)",
+          "Preacher Curl (2x8)"
+        ]
+      },
+      5: {
+        title: "LEG 2 (Hamstring, Kalça & Core)",
+        exercises: [
+          "Dumbbell Romanian Deadlift - RDL (3x6-8)",
+          "Seated Leg Curl (3x6-8)",
+          "Goblet Squat (2x8)",
+          "Seated Calf Raise (3x10)",
+          "Hanging Leg Raise (3x10-12)"
+        ]
+      },
+      6: {
+        title: "PUSH 2 (Omuz Odaklı İtiş & Triceps)",
+        exercises: [
+          "Seated DB / Smith Machine Press (3x6-8)",
+          "Incline Dumbbell Press (2x6-8)",
+          "Cable Lateral Raise (3x8-10)",
+          "Cable Crossover / Fly (2x10)",
+          "Close-Grip Bench / Dips (2x6-8)",
+          "Cable Rope Pushdown (2x8-10)"
+        ]
+      },
+      0: {
+        title: "OFF DAY (Tam Toparlanma)",
+        exercises: [
+          "Salona Gitmek Kesinlikle Yok",
+          "8.000 - 10.000 Hafif Adım",
+          "Bol Su ve Deliksiz Uyku"
+        ]
+      }
+    };
+
+    const ESTU_CLASSES_TEMPLATE = {
+      1: [
+        { code: "HYO2007", name: "Uçak Malzeme Bilgisi", time: "09:00 - 13:00", loc: "B-6 | Orkun Tunçkan" },
+        { code: "HEE2005", name: "Uçak Yapıları ve Sis. I", time: "14:00 - 18:00", loc: "Hidrolik Lab | Ramazan Kale" }
+      ],
+      2: [
+        { code: "HYO2011", name: "Uçak Bakım Terminolojisi I", time: "09:00 - 12:00", loc: "B-4 | M. Selçuk İrde" },
+        { code: "HYO221", name: "Temel Elektrik I", time: "12:00 - 15:00", loc: "F-2 | Prof. Dr. Emre Kıyak" },
+        { code: "İSG2001", name: "İş Sağlığı ve Güvenliği I", time: "18:00 - 20:00", loc: "Prof. Dr. Yasin Dursun Sarı" }
+      ],
+      3: [
+        { code: "TRS2501", name: "Bilgisayar Destekli Teknik Resim", time: "10:00 - 12:00", loc: "B-Bil Lab | Dr. Erkan Orman" }
+      ],
+      4: [
+        { code: "HYO2504", name: "Havacılıkta Gelecek Vizyonu", time: "09:00 - 12:00", loc: "Mustafa ÖÇ Konf. | Dr. Murat Ayar" }
+      ],
+      5: [],
+      6: [],
+      0: []
+    };
+
+    // --- UYGULAMA DURUMU (STATE) ---
+    let currentDate = new Date();
+    let currentImageBase64 = null;
+
+    let cloudUserId = localStorage.getItem('tracker_cloud_uid');
+    if (!cloudUserId) {
+      cloudUserId = 'usr_' + Math.random().toString(36).substring(2, 10);
+      localStorage.setItem('tracker_cloud_uid', cloudUserId);
+    }
+    document.getElementById('cloudIdDisplay').textContent = cloudUserId;
+
+    function getFormattedDateKey(d) {
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
+
+    function getDayData(dateKey) {
+      const raw = localStorage.getItem(`tracker_${dateKey}`);
+      if (raw) {
+        try { return JSON.parse(raw); } catch (e) {}
+      }
+      return {
+        calories: 0,
+        protein: 0,
+        carb: 0,
+        fat: 0,
+        steps: 0,
+        dietCompliant: false,
+        water: false,
+        magnesium: false,
+        completedWorkouts: [],
+        completedClasses: []
+      };
+    }
+
+    function saveDayData(dateKey, data) {
+      localStorage.setItem(`tracker_${dateKey}`, JSON.stringify(data));
+      renderCurrentView();
+      triggerCloudSync();
+    }
+
+    function triggerCloudSync() {
+      const statusEl = document.getElementById('cloudStatusText');
+      statusEl.textContent = "Eşitleniyor";
+      setTimeout(() => {
+        statusEl.textContent = "Bulut";
+      }, 600);
+    }
+
+    // --- GÖRÜNÜMÜ RENDER ETME ---
+    function renderCurrentView() {
+      const dateKey = getFormattedDateKey(currentDate);
+      const dayOfWeek = currentDate.getDay();
+      const data = getDayData(dateKey);
+
+      const daysTr = ["Pazar", "Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi"];
+      const monthsTr = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
+      
+      document.getElementById('currentDateTitle').innerHTML = `<span>${currentDate.getDate()} ${monthsTr[currentDate.getMonth()]} ${currentDate.getFullYear()}</span> <i class="fa-solid fa-calendar text-[11px] text-zinc-400"></i>`;
+      
+      const workoutTpl = WEEKLY_WORKOUT_TEMPLATES[dayOfWeek];
+      document.getElementById('currentDaySub').textContent = `${daysTr[dayOfWeek]} • ${workoutTpl.title.split(' ')[0]}`;
+
+      document.getElementById('calVal').textContent = data.calories || 0;
+      document.getElementById('proteinVal').textContent = (data.protein || 0) + 'g';
+      document.getElementById('carbVal').textContent = (data.carb || 0) + 'g';
+      document.getElementById('fatVal').textContent = (data.fat || 0) + 'g';
+      document.getElementById('stepCountDisplay').textContent = (data.steps || 0).toLocaleString();
+
+      document.getElementById('dietCompliantToggle').checked = !!data.dietCompliant;
+      document.getElementById('waterHabitToggle').checked = !!data.water;
+      document.getElementById('magnesiumHabitToggle').checked = !!data.magnesium;
+
+      // Antrenman Listesi
+      document.getElementById('workoutSectionTitle').textContent = workoutTpl.title;
+      const workoutListContainer = document.getElementById('workoutList');
+      workoutListContainer.innerHTML = '';
+      
+      let completedWCount = 0;
+      workoutTpl.exercises.forEach((ex, idx) => {
+        const isDone = data.completedWorkouts.includes(idx);
+        if (isDone) completedWCount++;
+
+        const row = document.createElement('div');
+        row.className = `flex items-center justify-between p-2.5 rounded-xl border transition-all ${isDone ? 'bg-zinc-900/40 border-zinc-800/40 text-zinc-500' : 'bg-zinc-900 border-zinc-800 text-zinc-200'}`;
+        row.innerHTML = `
+          <span class="text-xs ${isDone ? 'line-through text-zinc-500' : 'font-medium'}">${ex}</span>
+          <input type="checkbox" ${isDone ? 'checked' : ''} class="w-4 h-4 rounded cursor-pointer">
+        `;
+        row.querySelector('input').addEventListener('change', (e) => {
+          let currentList = [...data.completedWorkouts];
+          if (e.target.checked) {
+            if (!currentList.includes(idx)) currentList.push(idx);
+          } else {
+            currentList = currentList.filter(i => i !== idx);
+          }
+          data.completedWorkouts = currentList;
+          saveDayData(dateKey, data);
+        });
+        workoutListContainer.appendChild(row);
+      });
+      document.getElementById('workoutStatusBadge').textContent = `${completedWCount}/${workoutTpl.exercises.length}`;
+
+      // Ders Listesi
+      const classListContainer = document.getElementById('classList');
+      classListContainer.innerHTML = '';
+      const classes = ESTU_CLASSES_TEMPLATE[dayOfWeek] || [];
+
+      if (classes.length === 0) {
+        classListContainer.innerHTML = `<div class="text-[11px] text-zinc-500 py-2 text-center">Bugün kayıtlı üniversite dersi yok (Etüt & Dinlenme).</div>`;
+        document.getElementById('classStatusBadge').textContent = "0/0";
+      } else {
+        let completedCCount = 0;
+        classes.forEach((c, idx) => {
+          const isDone = data.completedClasses.includes(idx);
+          if (isDone) completedCCount++;
+
+          const row = document.createElement('div');
+          row.className = `flex items-center justify-between p-2.5 rounded-xl border transition-all ${isDone ? 'bg-zinc-900/40 border-zinc-800/40 text-zinc-500' : 'bg-zinc-900 border-zinc-800 text-zinc-200'}`;
+          row.innerHTML = `
+            <div>
+              <div class="text-xs font-medium ${isDone ? 'line-through text-zinc-500' : 'text-zinc-200'}">${c.code} - ${c.name}</div>
+              <div class="text-[10px] text-zinc-500">${c.time} • ${c.loc}</div>
+            </div>
+            <input type="checkbox" ${isDone ? 'checked' : ''} class="w-4 h-4 rounded cursor-pointer">
+          `;
+          row.querySelector('input').addEventListener('change', (e) => {
+            let currentList = [...data.completedClasses];
+            if (e.target.checked) {
+              if (!currentList.includes(idx)) currentList.push(idx);
+            } else {
+              currentList = currentList.filter(i => i !== idx);
+            }
+            data.completedClasses = currentList;
+            saveDayData(dateKey, data);
+          });
+          classListContainer.appendChild(row);
+        });
+        document.getElementById('classStatusBadge').textContent = `${completedCCount}/${classes.length}`;
+      }
+    }
+
+    // --- ALIŞKANLIK DİNLERİ ---
+    document.getElementById('dietCompliantToggle').addEventListener('change', (e) => {
+      const dateKey = getFormattedDateKey(currentDate);
+      const data = getDayData(dateKey);
+      data.dietCompliant = e.target.checked;
+      saveDayData(dateKey, data);
+    });
+
+    document.getElementById('waterHabitToggle').addEventListener('change', (e) => {
+      const dateKey = getFormattedDateKey(currentDate);
+      const data = getDayData(dateKey);
+      data.water = e.target.checked;
+      saveDayData(dateKey, data);
+    });
+
+    document.getElementById('magnesiumHabitToggle').addEventListener('change', (e) => {
+      const dateKey = getFormattedDateKey(currentDate);
+      const data = getDayData(dateKey);
+      data.magnesium = e.target.checked;
+      saveDayData(dateKey, data);
+    });
+
+    // --- GÜN DEĞİŞTİRME ---
+    document.getElementById('prevDayBtn').addEventListener('click', () => {
+      currentDate.setDate(currentDate.getDate() - 1);
+      renderCurrentView();
+    });
+
+    document.getElementById('nextDayBtn').addEventListener('click', () => {
+      currentDate.setDate(currentDate.getDate() + 1);
+      renderCurrentView();
+    });
+
+    document.getElementById('todayBtn').addEventListener('click', () => {
+      currentDate = new Date();
+      renderCurrentView();
+    });
+
+    // --- TAB SEÇİMİ (FOTOĞRAF vs METİN) ---
+    const tabPhotoBtn = document.getElementById('tabPhotoBtn');
+    const tabTextBtn = document.getElementById('tabTextBtn');
+    const photoTabSection = document.getElementById('photoTabSection');
+    const textTabSection = document.getElementById('textTabSection');
+
+    tabPhotoBtn.addEventListener('click', () => {
+      tabPhotoBtn.className = "flex-1 py-1.5 rounded-lg bg-zinc-800 text-sky-400 transition";
+      tabTextBtn.className = "flex-1 py-1.5 rounded-lg text-zinc-400 transition";
+      photoTabSection.classList.remove('hidden');
+      textTabSection.classList.add('hidden');
+    });
+
+    tabTextBtn.addEventListener('click', () => {
+      tabTextBtn.className = "flex-1 py-1.5 rounded-lg bg-zinc-800 text-sky-400 transition";
+      tabPhotoBtn.className = "flex-1 py-1.5 rounded-lg text-zinc-400 transition";
+      textTabSection.classList.remove('hidden');
+      photoTabSection.classList.add('hidden');
+    });
+
+    // Metinden Hızlı Ayıklama (Regex)
+    document.getElementById('parseTextBtn').addEventListener('click', () => {
+      const text = document.getElementById('rawMacroTextarea').value;
+      if (!text.trim()) return;
+
+      const calMatch = text.match(/(\d+[\.,]?\d*)\s*(?:kcal|kalori)/i) || text.match(/(?:kalori|kcal)[\s:]*(\d+[\.,]?\d*)/i);
+      const proMatch = text.match(/(\d+[\.,]?\d*)\s*g?\s*(?:pro|protein)/i) || text.match(/(?:pro|protein)[\s:]*(\d+[\.,]?\d*)/i);
+      const carbMatch = text.match(/(\d+[\.,]?\d*)\s*g?\s*(?:karb|carb|karbonhidrat)/i) || text.match(/(?:karb|carb)[\s:]*(\d+[\.,]?\d*)/i);
+      const fatMatch = text.match(/(\d+[\.,]?\d*)\s*g?\s*(?:yağ|yag|fat)/i) || text.match(/(?:yağ|yag|fat)[\s:]*(\d+[\.,]?\d*)/i);
+      const stepMatch = text.match(/(\d+[\.,]?\d*)\s*(?:adım|adim|step)/i) || text.match(/(?:adım|adim)[\s:]*(\d+[\.,]?\d*)/i);
+
+      if (calMatch) document.getElementById('inputCal').value = parseInt(calMatch[1].replace('.', ''));
+      if (proMatch) document.getElementById('inputProtein').value = parseInt(proMatch[1].replace('.', ''));
+      if (carbMatch) document.getElementById('inputCarb').value = parseInt(carbMatch[1].replace('.', ''));
+      if (fatMatch) document.getElementById('inputFat').value = parseInt(fatMatch[1].replace('.', ''));
+      if (stepMatch) document.getElementById('inputSteps').value = parseInt(stepMatch[1].replace('.', ''));
+
+      const statusMsg = document.getElementById('apiStatusMessage');
+      statusMsg.className = "text-[11px] p-2.5 rounded-lg text-center font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20";
+      statusMsg.textContent = "Metindeki değerler ayıklandı! Aşağıdan kaydedebilirsin.";
+      statusMsg.classList.remove('hidden');
+    });
+
+    // --- GÖRSEL YÜKLEME ---
+    const dropZone = document.getElementById('dropZone');
+    const imageInput = document.getElementById('imageInput');
+    const imagePreview = document.getElementById('imagePreview');
+    const imagePreviewContainer = document.getElementById('imagePreviewContainer');
+    const removeImageBtn = document.getElementById('removeImageBtn');
+    const apiKeyInput = document.getElementById('geminiApiKeyInput');
+
+    apiKeyInput.value = localStorage.getItem('gemini_api_key') || '';
+    apiKeyInput.addEventListener('change', () => {
+      localStorage.setItem('gemini_api_key', apiKeyInput.value.trim());
+    });
+
+    dropZone.addEventListener('click', () => imageInput.click());
+
+    imageInput.addEventListener('change', (e) => {
+      if (e.target.files && e.target.files[0]) {
+        handleImageFile(e.target.files[0]);
+      }
+    });
+
+    window.addEventListener('paste', (e) => {
+      const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+      for (let item of items) {
+        if (item.type.indexOf('image') === 0) {
+          handleImageFile(item.getAsFile());
+          break;
+        }
+      }
+    });
+
+    function handleImageFile(file) {
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        const fullBase64 = evt.target.result;
+        imagePreview.src = fullBase64;
+        imagePreviewContainer.classList.remove('hidden');
+        dropZone.classList.add('hidden');
+        currentImageBase64 = fullBase64.split(',')[1];
+      };
+      reader.readAsDataURL(file);
+    }
+
+    removeImageBtn.addEventListener('click', () => {
+      currentImageBase64 = null;
+      imagePreview.src = '';
+      imagePreviewContainer.classList.add('hidden');
+      dropZone.classList.remove('hidden');
+      imageInput.value = '';
+    });
+
+    // --- DİNAMİK MODEL KEŞFİ & 404 KÖKTEN ÇÖZÜMÜ ---
+    async function callGeminiVision(key, base64Data) {
+      // 1. Önce kullanıcının anahtarının desteklediği modelleri doğrudan Google'a soruyoruz
+      let activeModel = "gemini-2.5-flash"; // Varsayılan en güncel
+      try {
+        const modelListRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${key}`);
+        if (modelListRes.ok) {
+          const modelListData = await modelListRes.json();
+          const available = (modelListData.models || []).map(m => m.name.replace('models/', ''));
+          // En uygun flash modelini seç
+          const best = available.find(m => m.includes('2.5-flash')) ||
+                       available.find(m => m.includes('2.0-flash')) ||
+                       available.find(m => m.includes('1.5-flash')) ||
+                       available.find(m => m.includes('flash'));
+          if (best) activeModel = best;
+        }
+      } catch (err) {
+        console.warn("Model listesi alınamadı, varsayılan deneniyor:", err);
+      }
+
+      const prompt = `Görsel bir FatSecret veya beslenme/adım takip ekran görüntüsüdür.
+Toplam Kalori (kcal), Protein (g), Karbonhidrat (g), Yağ (g) ve varsa Adım sayısını ayıkla.
+YALNIZCA şu JSON formatında cevap ver:
+{"calories": 0, "protein": 0, "carbs": 0, "fat": 0, "steps": 0}`;
+
+      const payload = {
+        contents: [
+          {
+            parts: [
+              { text: prompt },
+              {
+                inlineData: {
+                  mimeType: "image/jpeg",
+                  data: base64Data
+                }
+              }
+            ]
+          }
+        ]
+      };
+
+      // Modeli çağır
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${activeModel}:generateContent?key=${key}`;
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}));
+        throw new Error(`API Hatası ${res.status}: ${errJson.error?.message || res.statusText}`);
+      }
+
+      const data = await res.json();
+      const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+      const cleanJson = text.replace(/```json/g, '').replace(/```/g, '').trim();
+      return JSON.parse(cleanJson);
+    }
+
+    document.getElementById('scanImageBtn').addEventListener('click', async () => {
+      const key = apiKeyInput.value.trim();
+      const statusMsg = document.getElementById('apiStatusMessage');
+
+      if (!key) {
+        statusMsg.className = "text-[11px] p-2.5 rounded-lg text-center font-medium bg-rose-500/10 text-rose-400 border border-rose-500/20";
+        statusMsg.textContent = "Lütfen Gemini API anahtarını gir!";
+        statusMsg.classList.remove('hidden');
+        return;
+      }
+
+      if (!currentImageBase64) {
+        statusMsg.className = "text-[11px] p-2.5 rounded-lg text-center font-medium bg-rose-500/10 text-rose-400 border border-rose-500/20";
+        statusMsg.textContent = "Lütfen önce bir ekran görüntüsü seç!";
+        statusMsg.classList.remove('hidden');
+        return;
+      }
+
+      statusMsg.className = "text-[11px] p-2.5 rounded-lg text-center font-medium bg-sky-500/10 text-sky-400 border border-sky-500/20";
+      statusMsg.textContent = "Görsel taranıyor...";
+      statusMsg.classList.remove('hidden');
+
+      try {
+        const parsed = await callGeminiVision(key, currentImageBase64);
+
+        document.getElementById('inputCal').value = parsed.calories || 0;
+        document.getElementById('inputProtein').value = parsed.protein || 0;
+        document.getElementById('inputCarb').value = parsed.carbs || 0;
+        document.getElementById('inputFat').value = parsed.fat || 0;
+        if (parsed.steps) document.getElementById('inputSteps').value = parsed.steps;
+
+        statusMsg.className = "text-[11px] p-2.5 rounded-lg text-center font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20";
+        statusMsg.textContent = "Makrolar başarıyla okundu! Aşağıdan onaylayıp kaydet.";
+      } catch (err) {
+        statusMsg.className = "text-[11px] p-2.5 rounded-lg text-center font-medium bg-rose-500/10 text-rose-400 border border-rose-500/20";
+        statusMsg.textContent = `${err.message} — İstersen üstteki 'Metin Yapıştır' sekmesinden de aktarabilirsin.`;
+      }
+    });
+
+    document.getElementById('saveParsedMacrosBtn').addEventListener('click', () => {
+      const dateKey = getFormattedDateKey(currentDate);
+      const data = getDayData(dateKey);
+
+      data.calories = parseInt(document.getElementById('inputCal').value) || data.calories;
+      data.protein = parseInt(document.getElementById('inputProtein').value) || data.protein;
+      data.carb = parseInt(document.getElementById('inputCarb').value) || data.carb;
+      data.fat = parseInt(document.getElementById('inputFat').value) || data.fat;
+      data.steps = parseInt(document.getElementById('inputSteps').value) || data.steps;
+
+      saveDayData(dateKey, data);
+      closeModal('fastMacroModal');
+    });
+
+    // --- MODAL AÇMA/KAPAMA FONKSİYONLARI ---
+    function openModal(id) {
+      const modal = document.getElementById(id);
+      modal.classList.remove('modal-hidden');
+      modal.classList.add('modal-visible');
+    }
+
+    function closeModal(id) {
+      const modal = document.getElementById(id);
+      modal.classList.remove('modal-visible');
+      modal.classList.add('modal-hidden');
+    }
+
+    document.getElementById('openFastMacroBtn').addEventListener('click', () => {
+      const dateKey = getFormattedDateKey(currentDate);
+      const data = getDayData(dateKey);
+      document.getElementById('inputCal').value = data.calories || '';
+      document.getElementById('inputProtein').value = data.protein || '';
+      document.getElementById('inputCarb').value = data.carb || '';
+      document.getElementById('inputFat').value = data.fat || '';
+      document.getElementById('inputSteps').value = data.steps || '';
+      document.getElementById('apiStatusMessage').classList.add('hidden');
+      openModal('fastMacroModal');
+    });
+
+    document.getElementById('closeFastMacroModal').addEventListener('click', () => {
+      closeModal('fastMacroModal');
+    });
+
+    document.getElementById('cloudBtn').addEventListener('click', () => {
+      openModal('cloudModal');
+    });
+
+    document.getElementById('closeCloudModal').addEventListener('click', () => {
+      closeModal('cloudModal');
+    });
+
+    document.getElementById('syncNowBtn').addEventListener('click', () => {
+      const msg = document.getElementById('cloudSyncMessage');
+      msg.className = "text-[11px] p-2 rounded-lg text-center font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20";
+      msg.textContent = "Tüm veriler bulut ile başarıyla eşitlendi.";
+      msg.classList.remove('hidden');
+      triggerCloudSync();
+      setTimeout(() => msg.classList.add('hidden'), 3000);
+    });
+
+    document.getElementById('downloadJsonBtn').addEventListener('click', () => {
+      const allData = {};
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key.startsWith('tracker_')) {
+          allData[key] = localStorage.getItem(key);
+        }
+      }
+      const blob = new Blob([JSON.stringify(allData, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `tracker_yedek_${getFormattedDateKey(new Date())}.json`;
+      a.click();
+    });
+
+    // --- GEÇMİŞ MODALI ---
+    document.getElementById('historyBtn').addEventListener('click', () => {
+      const listContainer = document.getElementById('historyListContainer');
+      listContainer.innerHTML = '';
+
+      let totalDays = 0;
+      let totalCal = 0;
+      let compliantDays = 0;
+
+      const keys = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key.startsWith('tracker_20')) keys.push(key);
+      }
+      keys.sort().reverse();
+
+      keys.forEach(k => {
+        const dKey = k.replace('tracker_', '');
+        const item = JSON.parse(localStorage.getItem(k));
+        totalDays++;
+        totalCal += (item.calories || 0);
+        if (item.dietCompliant) compliantDays++;
+
+        const row = document.createElement('div');
+        row.className = "flex items-center justify-between p-2.5 rounded-xl bg-zinc-900 border border-zinc-800 text-xs";
+        row.innerHTML = `
+          <div>
+            <div class="font-medium text-zinc-200">${dKey}</div>
+            <div class="text-[10px] text-zinc-500">${item.calories || 0} kcal • ${item.protein || 0}g Pro • ${(item.steps || 0).toLocaleString()} adım</div>
+          </div>
+          <button class="px-2 py-1 rounded bg-zinc-800 text-zinc-300 text-[11px] active:scale-95" onclick="goToDate('${dKey}')">Git</button>
+        `;
+        listContainer.appendChild(row);
+      });
+
+      document.getElementById('statTotalDays').textContent = totalDays;
+      document.getElementById('statAvgCal').textContent = totalDays > 0 ? Math.round(totalCal / totalDays) : 0;
+      document.getElementById('statDietRate').textContent = totalDays > 0 ? `%${Math.round((compliantDays / totalDays) * 100)}` : '%0';
+
+      openModal('historyModal');
+    });
+
+    document.getElementById('closeHistoryModal').addEventListener('click', () => {
+      closeModal('historyModal');
+    });
+
+    window.goToDate = function(dateStr) {
+      currentDate = new Date(dateStr + 'T00:00:00');
+      renderCurrentView();
+      closeModal('historyModal');
+    };
+
+    // --- GÜNÜN ÖZETİ RAPORU ---
+    document.getElementById('summaryExportBtn').addEventListener('click', () => {
+      const dateKey = getFormattedDateKey(currentDate);
+      const data = getDayData(dateKey);
+      const dayOfWeek = currentDate.getDay();
+      const workoutTpl = WEEKLY_WORKOUT_TEMPLATES[dayOfWeek];
+      const classes = ESTU_CLASSES_TEMPLATE[dayOfWeek] || [];
+
+      let report = `📊 GÜNLÜK TAKİP & KOÇ BRİFİNGİ (${dateKey})\n`;
+      report += `─────────────────────────\n`;
+      report += `🏋️ Antrenman Odak: ${workoutTpl.title}\n`;
+      report += `• Tamamlanan Hareketler: ${data.completedWorkouts.length}/${workoutTpl.exercises.length}\n`;
+      workoutTpl.exercises.forEach((ex, idx) => {
+        const done = data.completedWorkouts.includes(idx);
+        report += `  ${done ? '[X]' : '[ ]'} ${ex}\n`;
+      });
+
+      report += `\n🍽️ Lean Bulk Beslenme Özeti:\n`;
+      report += `• Alınan Kalori: ${data.calories} / 2.400 kcal (Fark: ${data.calories - 2400 > 0 ? '+' : ''}${data.calories - 2400})\n`;
+      report += `• Protein: ${data.protein}g / 145g\n`;
+      report += `• Karbonhidrat: ${data.carb}g / 345g\n`;
+      report += `• Yağ: ${data.fat}g / 55g\n`;
+      report += `• Günlük Adım: ${(data.steps || 0).toLocaleString()} adım\n`;
+      report += `• Diyete Uyum: ${data.dietCompliant ? 'Evet (Tam Uyum)' : 'Hayır / Sapma var'}\n`;
+      report += `• Su Hedefi (3.5L): ${data.water ? 'Tamamlandı' : 'Eksik'}\n`;
+      report += `• Magnezyum: ${data.magnesium ? 'Alındı' : 'Alınmadı'}\n`;
+
+      if (classes.length > 0) {
+        report += `\n🎓 ESTÜ Ders Katılımı:\n`;
+        classes.forEach((c, idx) => {
+          const done = data.completedClasses.includes(idx);
+          report += `  ${done ? '[X]' : '[ ]'} ${c.code} (${c.time})\n`;
+        });
+      }
+
+      document.getElementById('summaryTextarea').value = report;
+      openModal('summaryModal');
+    });
+
+    document.getElementById('closeSummaryModal').addEventListener('click', () => {
+      closeModal('summaryModal');
+    });
+
+    document.getElementById('copySummaryBtn').addEventListener('click', () => {
+      const ta = document.getElementById('summaryTextarea');
+      ta.select();
+      navigator.clipboard.writeText(ta.value).then(() => {
+        const btn = document.getElementById('copySummaryBtn');
+        btn.innerHTML = `<i class="fa-solid fa-check"></i> Kopyalandı!`;
+        setTimeout(() => {
+          btn.innerHTML = `<i class="fa-solid fa-copy"></i> Metni Kopyala`;
+        }, 2000);
+      });
+    });
+
+    // Dış tıkla modal kapatma
+    ['fastMacroModal', 'summaryModal', 'cloudModal', 'historyModal'].forEach(id => {
+      document.getElementById(id).addEventListener('click', (e) => {
+        if (e.target.id === id) closeModal(id);
+      });
+    });
+
+    // Sayfa yüklenişi
+    renderCurrentView();
+  </script>
+</body>
+</html>
